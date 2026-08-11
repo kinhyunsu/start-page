@@ -4,7 +4,6 @@ import { useState } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import WidgetCard from "./WidgetCard";
 import HoldingsForm from "./HoldingsForm";
-import AiAlertPanel from "./AiAlertPanel";
 
 function formatPercent(value: number | null) {
   if (value === null) return "-";
@@ -85,8 +84,6 @@ export default function PortfolioWidget() {
               ))}
             </div>
           )}
-
-          <AiAlertPanel />
 
           <button
             onClick={() => setShowManage((v) => !v)}

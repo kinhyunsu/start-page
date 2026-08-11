@@ -17,15 +17,6 @@ create policy "anon can insert holdings" on holdings for insert to anon with che
 create policy "anon can update holdings" on holdings for update to anon using (true) with check (true);
 create policy "anon can delete holdings" on holdings for delete to anon using (true);
 
-create table if not exists ai_alerts (
-  id uuid primary key default gen_random_uuid(),
-  summary text not null,
-  generated_at timestamptz not null default now()
-);
-alter table ai_alerts enable row level security;
-create policy "anon can read ai_alerts" on ai_alerts for select to anon using (true);
-create policy "anon can insert ai_alerts" on ai_alerts for insert to anon with check (true);
-
 create table if not exists kis_token_cache (
   id int primary key default 1,
   access_token text not null,
