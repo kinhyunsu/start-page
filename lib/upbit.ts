@@ -6,6 +6,22 @@ export type UpbitTicker = {
   prev_closing_price: number;
 };
 
+export type UpbitMarket = {
+  market: string; // e.g. "KRW-BTC"
+  korean_name: string;
+  english_name: string;
+};
+
+export async function fetchUpbitMarkets(): Promise<UpbitMarket[]> {
+  const res = await fetch("https://api.upbit.com/v1/market/all?is_details=false", {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("업비트 마켓 목록을 가져오지 못했습니다.");
+
+  const data: UpbitMarket[] = await res.json();
+  return data.filter((m) => m.market.startsWith("KRW-"));
+}
+
 export async function fetchUpbitTickers(markets: string[]): Promise<Map<string, UpbitTicker>> {
   if (markets.length === 0) return new Map();
 
