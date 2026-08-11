@@ -7,25 +7,31 @@ export function isAnthropicConfigured() {
   return !!process.env.ANTHROPIC_API_KEY;
 }
 
-export async function generatePortfolioInsight(holdings: PricedHolding[]): Promise<string> {
-  const summaryLines = holdings
-    .filter((h) => h.gainLossPercent !== null)
-    .map((h) => `${h.symbol} (${h.asset_type}): 수익률 ${h.gainLossPercent!.toFixed(1)}%`)
-    .join("\n");
+export async function generateHoldingsNewsDigest(holdings: PricedHolding[]): Promise<string> {
+  const items = holdings.map((h) => h.name ?? h.symbol);
+  const itemList = items.map((name, i) => `${i + 1}. ${name}`).join("\n");
 
   const response = await client.messages.create({
     model: "claude-opus-5",
-    max_tokens: 300,
-    thinking: { type: "disabled" },
-    output_config: { effort: "low" },
+    max_tokens: 4096,
+    output_config: { effort: "high" },
+    tools: [
+      {
+        type: "web_search_20260209",
+        name: "web_search",
+        max_uses: Math.min(items.length * 2, 12),
+      },
+    ],
     messages: [
       {
         role: "user",
-        content: `다음은 보유 종목별 수익률입니다:\n${summaryLines}\n\n이 보유 종목들을 한국어로 짧은 한 문단(3~4문장)으로 요약하고, 특별히 눈에 띄는 변동(큰 수익 또는 손실)이 있으면 짚어주세요. 투자 조언이나 매매 추천은 하지 마세요.`,
+        content: `다음은 사용자가 보유한 주식/코인 종목입니다:\n${itemList}\n\n각 종목마다 웹 검색을 최소 1회 이상 수행해서 최근(가능하면 최근 2~3일 이내) 관련 뉴스나 글을 찾아주세요. 종목별로 소제목을 달고, 핵심 뉴스 1~2개를 "제목 - 한 줄 요약 (출처)" 형식으로 정리해 한국어로 보여주세요. 투자 조언이나 매매 추천은 하지 마세요. 특별한 뉴스가 없는 종목은 "특별한 뉴스 없음"이라고만 적어주세요.`,
       },
     ],
   });
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  return textBlock?.type === "text" ? textBlock.text : "";
+  return response.content
+    .filter((b) => b.type === "text")
+    .map((b) => (b.type === "text" ? b.text : ""))
+    .join("\n");
 }

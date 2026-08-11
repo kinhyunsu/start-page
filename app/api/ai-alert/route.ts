@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchUpbitTickers } from "@/lib/upbit";
 import { fetchKisPrice, isKisConfigured } from "@/lib/kis";
 import { computeGainLoss, type Holding, type PricedHolding } from "@/lib/portfolio";
-import { generatePortfolioInsight, isAnthropicConfigured } from "@/lib/anthropic";
+import { generateHoldingsNewsDigest, isAnthropicConfigured } from "@/lib/anthropic";
 
 function todayKstDateString() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
@@ -69,7 +69,7 @@ export async function POST() {
     return NextResponse.json({ error: "보유 종목이 없습니다." }, { status: 400 });
   }
 
-  const summary = await generatePortfolioInsight(holdings);
+  const summary = await generateHoldingsNewsDigest(holdings);
   const { data: inserted, error } = await supabase
     .from("ai_alerts")
     .insert({ summary })

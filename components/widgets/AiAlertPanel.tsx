@@ -23,12 +23,12 @@ export default function AiAlertPanel() {
       const res = await fetch("/api/ai-alert", { method: "POST" });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "코멘트 생성에 실패했습니다.");
+        setError(json.error ?? "뉴스 요약 생성에 실패했습니다.");
         return;
       }
       setSummary(json.summary);
     } catch {
-      setError("코멘트 생성에 실패했습니다.");
+      setError("뉴스 요약 생성에 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -41,10 +41,16 @@ export default function AiAlertPanel() {
         disabled={loading}
         className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
       >
-        {loading ? "생성 중..." : summary ? "오늘의 AI 코멘트 다시보기" : "오늘의 AI 코멘트 보기"}
+        {loading
+          ? "관련 뉴스 검색 중... (최대 1분 소요)"
+          : summary
+            ? "보유 종목 관련 뉴스 다시보기"
+            : "보유 종목 관련 뉴스 보기"}
       </button>
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-      {summary && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{summary}</p>}
+      {summary && (
+        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-400">{summary}</p>
+      )}
     </div>
   );
 }
