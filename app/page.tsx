@@ -8,9 +8,12 @@ import PortfolioWidget from "@/components/widgets/PortfolioWidget";
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
-      <div className="mx-auto flex w-full max-w-5xl justify-end px-6 pt-4">
-        <AuthButton />
-      </div>
+      <header className="border-b border-border">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
+          <span className="text-sm font-semibold tracking-tight text-ink">🏠 시작페이지</span>
+          <AuthButton />
+        </div>
+      </header>
       <DashboardGrid>
         <NaverSearchWidget />
         <ClockWidget />

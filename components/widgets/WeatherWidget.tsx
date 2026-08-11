@@ -74,23 +74,19 @@ export default function WeatherWidget() {
   return (
     <WidgetCard title="날씨">
       {error && !reading && <p className="text-sm text-red-500">{error}</p>}
-      {!error && !reading && (
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">불러오는 중...</p>
-      )}
+      {!error && !reading && <p className="text-sm text-ink-faint">불러오는 중...</p>}
       {reading && (
         <div>
           <div className="flex items-center gap-3">
             <span className="text-4xl">{describeWeatherCode(reading.weatherCode).icon}</span>
             <div>
-              <p className="text-3xl font-semibold tabular-nums">
+              <p className="font-mono text-3xl font-semibold tabular-nums text-ink">
                 {Math.round(reading.temperature)}°C
               </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {describeWeatherCode(reading.weatherCode).label}
-              </p>
+              <p className="text-sm text-ink-soft">{describeWeatherCode(reading.weatherCode).label}</p>
             </div>
           </div>
-          <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="mt-2 text-xs text-ink-faint">
             {location?.city} · 습도 {reading.humidity}% · 풍속 {reading.windSpeed}m/s
           </p>
         </div>

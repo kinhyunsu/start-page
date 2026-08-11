@@ -14,10 +14,10 @@ function formatPercent(value: number | null) {
 }
 
 function percentColor(value: number | null) {
-  if (value === null) return "text-zinc-400";
+  if (value === null) return "text-ink-faint";
   if (value > 0) return "text-red-500";
   if (value < 0) return "text-blue-500";
-  return "text-zinc-500";
+  return "text-ink-soft";
 }
 
 export default function PortfolioWidget() {
@@ -36,18 +36,14 @@ export default function PortfolioWidget() {
 
   return (
     <WidgetCard title="포트폴리오" className="sm:col-span-2 lg:col-span-3">
-      {user === undefined && (
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">불러오는 중...</p>
-      )}
+      {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
       {user === null && (
         <div className="py-4 text-center">
-          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-            보유 종목을 확인하려면 로그인이 필요합니다.
-          </p>
+          <p className="mb-3 text-sm text-ink-soft">보유 종목을 확인하려면 로그인이 필요합니다.</p>
           <button
             onClick={signIn}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-ink"
           >
             Google로 로그인
           </button>
@@ -55,16 +51,14 @@ export default function PortfolioWidget() {
       )}
 
       {user && error && !data && <p className="text-sm text-red-500">{error}</p>}
-      {user && !error && !data && (
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">불러오는 중...</p>
-      )}
+      {user && !error && !data && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
       {user && data && (
         <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-zinc-400 dark:text-zinc-500">
+                <tr className="text-left text-ink-faint">
                   <th className="pb-2 font-normal">종목</th>
                   <th className="pb-2 font-normal">현재가</th>
                   <th className="pb-2 font-normal">평가금액</th>
@@ -73,27 +67,27 @@ export default function PortfolioWidget() {
               </thead>
               <tbody>
                 {data.holdings.map((h) => (
-                  <tr key={h.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                    <td className="py-2">
+                  <tr key={h.id} className="border-t border-border">
+                    <td className="py-2 text-ink">
                       {h.name ?? h.symbol}
-                      <span className="ml-1 text-xs text-zinc-400">
+                      <span className="ml-1 text-xs text-ink-faint">
                         {h.asset_type === "crypto" ? "코인" : "주식"}
                       </span>
                     </td>
-                    <td className="py-2 tabular-nums">
+                    <td className="py-2 font-mono tabular-nums text-ink">
                       {h.price !== null ? h.price.toLocaleString() : h.error ?? "-"}
                     </td>
-                    <td className="py-2 tabular-nums">
+                    <td className="py-2 font-mono tabular-nums text-ink">
                       {h.marketValue !== null ? h.marketValue.toLocaleString() : "-"}
                     </td>
-                    <td className={`py-2 tabular-nums ${percentColor(h.gainLossPercent)}`}>
+                    <td className={`py-2 font-mono tabular-nums ${percentColor(h.gainLossPercent)}`}>
                       {formatPercent(h.gainLossPercent)}
                     </td>
                   </tr>
                 ))}
                 {data.holdings.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-zinc-400 dark:text-zinc-500">
+                    <td colSpan={4} className="py-4 text-center text-ink-faint">
                       보유 종목이 없습니다. 아래에서 추가해보세요.
                     </td>
                   </tr>
@@ -106,9 +100,9 @@ export default function PortfolioWidget() {
             <div className="mt-3 flex flex-wrap gap-4 text-sm">
               {data.totals.map((t) => (
                 <div key={t.currency}>
-                  <span className="text-zinc-400 dark:text-zinc-500">{t.currency} 합계</span>{" "}
-                  <span className="tabular-nums">{t.marketValue.toLocaleString()}</span>{" "}
-                  <span className={`tabular-nums ${percentColor(t.gainLossPercent)}`}>
+                  <span className="text-ink-faint">{t.currency} 합계</span>{" "}
+                  <span className="font-mono tabular-nums text-ink">{t.marketValue.toLocaleString()}</span>{" "}
+                  <span className={`font-mono tabular-nums ${percentColor(t.gainLossPercent)}`}>
                     ({formatPercent(t.gainLossPercent)})
                   </span>
                 </div>
@@ -118,7 +112,7 @@ export default function PortfolioWidget() {
 
           <button
             onClick={() => setShowManage((v) => !v)}
-            className="mt-4 text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+            className="mt-4 text-xs font-medium text-accent hover:text-accent-ink"
           >
             {showManage ? "종목 관리 닫기" : "보유 종목 관리"}
           </button>

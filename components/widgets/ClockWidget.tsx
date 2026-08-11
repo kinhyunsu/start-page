@@ -11,10 +11,10 @@ export default function ClockWidget() {
     <WidgetCard title="시계">
       {now ? (
         <div>
-          <p className="font-mono text-4xl font-semibold tabular-nums">
+          <p className="font-mono text-4xl font-semibold tabular-nums text-ink">
             {now.toLocaleTimeString("ko-KR", { hour12: false })}
           </p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-ink-soft">
             {now.toLocaleDateString("ko-KR", {
               year: "numeric",
               month: "long",
@@ -22,10 +22,10 @@ export default function ClockWidget() {
               weekday: "long",
             })}
           </p>
-          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">{timeZone}</p>
+          <p className="mt-1 text-xs text-ink-faint">{timeZone}</p>
         </div>
       ) : (
-        <p className="text-4xl font-semibold text-zinc-300 dark:text-zinc-700">--:--:--</p>
+        <p className="font-mono text-4xl font-semibold text-ink-faint">--:--:--</p>
       )}
     </WidgetCard>
   );

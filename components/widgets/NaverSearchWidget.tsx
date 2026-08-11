@@ -14,11 +14,11 @@ export default function NaverSearchWidget() {
           name="query"
           placeholder="네이버에서 검색"
           autoComplete="off"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-base outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-800"
+          className="flex-1 rounded-full border border-border bg-bg px-4 py-2.5 text-base text-ink outline-none focus:border-accent"
         />
         <button
           type="submit"
-          className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-ink"
         >
           검색
         </button>
