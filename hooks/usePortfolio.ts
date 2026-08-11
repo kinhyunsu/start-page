@@ -20,7 +20,7 @@ type PortfolioResponse = {
   generatedAt: string;
 };
 
-export function usePortfolio(refreshKey: number) {
+export function usePortfolio(refreshKey: number, enabled: boolean) {
   const [data, setData] = useState<PortfolioResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +36,7 @@ export function usePortfolio(refreshKey: number) {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
 
     async function load() {
@@ -58,7 +59,7 @@ export function usePortfolio(refreshKey: number) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [refreshKey]);
+  }, [refreshKey, enabled]);
 
   return { data, error };
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-browser";
 import { fetchUpbitMarkets, type UpbitMarket } from "@/lib/upbit";
 import type { PricedHolding } from "@/lib/portfolio";
+
+const supabase = createClient();
 
 type HoldingsFormProps = {
   holdings: PricedHolding[];

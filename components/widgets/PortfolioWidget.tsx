@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
+import { useUser } from "@/hooks/useUser";
+import { createClient } from "@/lib/supabase-browser";
 import WidgetCard from "./WidgetCard";
 import HoldingsForm from "./HoldingsForm";
 
@@ -21,14 +23,43 @@ function percentColor(value: number | null) {
 export default function PortfolioWidget() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showManage, setShowManage] = useState(false);
-  const { data, error } = usePortfolio(refreshKey);
+  const user = useUser();
+  const { data, error } = usePortfolio(refreshKey, !!user);
+
+  async function signIn() {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+  }
 
   return (
     <WidgetCard title="포트폴리오" className="sm:col-span-2 lg:col-span-3">
-      {error && !data && <p className="text-sm text-red-500">{error}</p>}
-      {!error && !data && <p className="text-sm text-zinc-400 dark:text-zinc-500">불러오는 중...</p>}
+      {user === undefined && (
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">불러오는 중...</p>
+      )}
 
-      {data && (
+      {user === null && (
+        <div className="py-4 text-center">
+          <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+            보유 종목을 확인하려면 로그인이 필요합니다.
+          </p>
+          <button
+            onClick={signIn}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Google로 로그인
+          </button>
+        </div>
+      )}
+
+      {user && error && !data && <p className="text-sm text-red-500">{error}</p>}
+      {user && !error && !data && (
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">불러오는 중...</p>
+      )}
+
+      {user && data && (
         <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

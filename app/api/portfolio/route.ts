@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { fetchUpbitTickers } from "@/lib/upbit";
 import { fetchKisPrice, isKisConfigured } from "@/lib/kis";
 import { aggregatePortfolio, computeGainLoss, type Holding, type PricedHolding } from "@/lib/portfolio";
 
 export async function GET() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
+
   const { data: holdings, error } = await supabase
     .from("holdings")
     .select("*")
