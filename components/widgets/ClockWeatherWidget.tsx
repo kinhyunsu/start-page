@@ -77,14 +77,14 @@ export default function ClockWeatherWidget() {
 
   return (
     <WidgetCard title="오늘">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-baseline gap-2">
           {now ? (
             <>
               <p className="font-mono text-3xl font-semibold tabular-nums text-ink">
                 {now.toLocaleTimeString("ko-KR", { hour12: false })}
               </p>
-              <p className="mt-1 text-xs text-ink-faint">
+              <p className="text-xs text-ink-faint">
                 {now.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })} ·{" "}
                 {timeZone}
               </p>
@@ -94,18 +94,18 @@ export default function ClockWeatherWidget() {
           )}
         </div>
 
-        <div className="h-10 w-px bg-border" />
+        <div className="h-px w-full bg-border" />
 
-        <div className="text-right">
+        <div className="flex items-baseline gap-2">
           {weatherError && !reading && <p className="text-xs text-red-500">{weatherError}</p>}
           {!weatherError && !reading && <p className="text-xs text-ink-faint">불러오는 중</p>}
           {reading && (
             <>
-              <p className="flex items-center justify-end gap-1.5 font-mono text-2xl font-semibold tabular-nums text-ink">
-                <span className="text-lg">{describeWeatherCode(reading.weatherCode).icon}</span>
+              <p className="flex items-baseline gap-1 font-mono text-2xl font-semibold tabular-nums text-ink">
+                <span className="text-base">{describeWeatherCode(reading.weatherCode).icon}</span>
                 {Math.round(reading.temperature)}°C
               </p>
-              <p className="mt-1 text-xs text-ink-faint">
+              <p className="text-xs text-ink-faint">
                 {describeWeatherCode(reading.weatherCode).label} · {location?.city}
               </p>
             </>
