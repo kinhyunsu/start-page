@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useClock } from "@/hooks/useClock";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { describeWeatherCode } from "@/lib/weatherCodes";
 import WidgetCard from "./WidgetCard";
@@ -30,10 +31,13 @@ async function fetchWeather(lat: number, lon: number): Promise<WeatherReading> {
   };
 }
 
-export default function WeatherWidget() {
+export default function ClockWeatherWidget() {
+  const now = useClock();
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   const location = useGeolocation();
   const [reading, setReading] = useState<WeatherReading | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -56,10 +60,10 @@ export default function WeatherWidget() {
         const data = await fetchWeather(location!.lat, location!.lon);
         if (cancelled) return;
         setReading(data);
-        setError(null);
+        setWeatherError(null);
         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
       } catch {
-        if (!cancelled) setError("날씨 정보를 가져오지 못했습니다.");
+        if (!cancelled) setWeatherError("날씨 정보를 가져오지 못했습니다.");
       }
     }
 
@@ -72,25 +76,42 @@ export default function WeatherWidget() {
   }, [location]);
 
   return (
-    <WidgetCard title="날씨">
-      {error && !reading && <p className="text-sm text-red-500">{error}</p>}
-      {!error && !reading && <p className="text-sm text-ink-faint">불러오는 중...</p>}
-      {reading && (
+    <WidgetCard title="오늘">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">{describeWeatherCode(reading.weatherCode).icon}</span>
-            <div>
+          {now ? (
+            <>
               <p className="font-mono text-3xl font-semibold tabular-nums text-ink">
+                {now.toLocaleTimeString("ko-KR", { hour12: false })}
+              </p>
+              <p className="mt-1 text-xs text-ink-faint">
+                {now.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })} ·{" "}
+                {timeZone}
+              </p>
+            </>
+          ) : (
+            <p className="font-mono text-3xl font-semibold text-ink-faint">--:--:--</p>
+          )}
+        </div>
+
+        <div className="h-10 w-px bg-border" />
+
+        <div className="text-right">
+          {weatherError && !reading && <p className="text-xs text-red-500">{weatherError}</p>}
+          {!weatherError && !reading && <p className="text-xs text-ink-faint">불러오는 중</p>}
+          {reading && (
+            <>
+              <p className="flex items-center justify-end gap-1.5 font-mono text-2xl font-semibold tabular-nums text-ink">
+                <span className="text-lg">{describeWeatherCode(reading.weatherCode).icon}</span>
                 {Math.round(reading.temperature)}°C
               </p>
-              <p className="text-sm text-ink-soft">{describeWeatherCode(reading.weatherCode).label}</p>
-            </div>
-          </div>
-          <p className="mt-2 text-xs text-ink-faint">
-            {location?.city} · 습도 {reading.humidity}% · 풍속 {reading.windSpeed}m/s
-          </p>
+              <p className="mt-1 text-xs text-ink-faint">
+                {describeWeatherCode(reading.weatherCode).label} · {location?.city}
+              </p>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </WidgetCard>
   );
 }

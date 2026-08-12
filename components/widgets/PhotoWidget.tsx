@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase-browser";
+import { resizeImage } from "@/lib/resizeImage";
 import WidgetCard from "./WidgetCard";
 
 const BUCKET = "dashboard-photos";
@@ -39,10 +40,20 @@ export default function PhotoWidget() {
 
     setUploading(true);
     setError(null);
+
+    let resized: Blob;
+    try {
+      resized = await resizeImage(file);
+    } catch {
+      setUploading(false);
+      setError("이미지를 처리하지 못했습니다.");
+      return;
+    }
+
     const supabase = createClient();
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(`${user.id}/photo`, file, { upsert: true, contentType: file.type });
+      .upload(`${user.id}/photo`, resized, { upsert: true, contentType: resized.type });
 
     setUploading(false);
     if (uploadError) {
@@ -87,12 +98,12 @@ export default function PhotoWidget() {
       )}
 
       {user && hasPhoto !== false && photoUrl && (
-        <div className="group relative -mx-5 -mb-5 mt-1 aspect-square">
+        <div className="group relative -mx-5 -mb-5 mt-1 aspect-square bg-bg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photoUrl}
             alt="내 사진"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             onLoad={() => setHasPhoto(true)}
             onError={() => setHasPhoto(false)}
           />
