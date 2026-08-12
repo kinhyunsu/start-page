@@ -3,6 +3,7 @@ import DashboardGrid from "@/components/layout/DashboardGrid";
 import ClockWidget from "@/components/widgets/ClockWidget";
 import WeatherWidget from "@/components/widgets/WeatherWidget";
 import NaverSearchWidget from "@/components/widgets/NaverSearchWidget";
+import PhotoWidget from "@/components/widgets/PhotoWidget";
 import PortfolioWidget from "@/components/widgets/PortfolioWidget";
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
         <NaverSearchWidget />
         <ClockWidget />
         <WeatherWidget />
+        <PhotoWidget />
         <PortfolioWidget />
       </DashboardGrid>
     </main>
