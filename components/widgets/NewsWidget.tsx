@@ -12,6 +12,7 @@ type Article = {
   pubDate: string;
   source: string;
   game?: string;
+  official?: boolean;
 };
 
 type Category = "politics" | "hot" | "games";
@@ -148,6 +149,12 @@ export default function NewsWidget() {
       )}
 
       {tab === "games" && user && (
+        <p className="mb-2 text-xs text-ink-faint">
+          스팀에 있는 게임은 <span className="rounded-full bg-accent px-1.5 py-0.5 text-white">공식</span> 배지와 함께 스팀 공식 소식이 표시돼요 (영문명으로 검색해야 잘 찾아져요). 스팀 밖 게임은 관련 뉴스로 대신 보여줘요.
+        </p>
+      )}
+
+      {tab === "games" && user && (
         <form onSubmit={handleAddGame} className="mb-3 flex flex-wrap items-center gap-1.5">
           {(current?.gameNames ?? []).map((name) => (
             <span
@@ -169,7 +176,7 @@ export default function NewsWidget() {
               <input
                 value={gameInput}
                 onChange={(e) => setGameInput(e.target.value)}
-                placeholder="게임 이름 추가"
+                placeholder="게임 이름 (스팀 게임은 영문명 추천)"
                 className="rounded-full border border-border bg-bg px-3 py-1 text-xs text-ink outline-none focus:border-accent"
               />
               <button
@@ -212,6 +219,11 @@ export default function NewsWidget() {
                 {a.game && (
                   <span className="mr-1.5 rounded-full bg-accent-soft px-1.5 py-0.5 text-ink-soft">
                     {a.game}
+                  </span>
+                )}
+                {a.official && (
+                  <span className="mr-1.5 rounded-full bg-accent px-1.5 py-0.5 text-white">
+                    공식
                   </span>
                 )}
                 {a.source} · {timeAgo(a.pubDate)}

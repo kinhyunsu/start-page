@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { fetchTopStories, searchNews, type NewsArticle } from "@/lib/googleNews";
+import { fetchOfficialSteamUpdates } from "@/lib/steamNews";
 
-type GameArticle = NewsArticle & { game: string };
+type GameArticle = NewsArticle & { game: string; official: boolean };
+
+async function fetchGameUpdates(name: string): Promise<{ name: string; articles: GameArticle[] }> {
+  let steamArticles: NewsArticle[] | null = null;
+  try {
+    steamArticles = await fetchOfficialSteamUpdates(name, 4);
+  } catch {
+    steamArticles = null;
+  }
+
+  if (steamArticles) {
+    return { name, articles: steamArticles.map((a) => ({ ...a, game: name, official: true })) };
+  }
+
+  const newsArticles = await searchNews(`${name} 업데이트`, 4);
+  return { name, articles: newsArticles.map((a) => ({ ...a, game: name, official: false })) };
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -39,16 +56,9 @@ export async function GET(request: Request) {
     }
 
     try {
-      const results = await Promise.all(
-        gameNames.map(async (name) => ({
-          name,
-          articles: await searchNews(`${name} 업데이트`, 4),
-        }))
-      );
+      const results = await Promise.all(gameNames.map(fetchGameUpdates));
 
-      const articles: GameArticle[] = results.flatMap((r) =>
-        r.articles.map((a) => ({ ...a, game: r.name }))
-      );
+      const articles: GameArticle[] = results.flatMap((r) => r.articles);
       articles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
       return NextResponse.json({ games: gameNames, articles });
