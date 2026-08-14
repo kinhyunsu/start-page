@@ -74,8 +74,10 @@ export default function PhotoWidget() {
     setHasPhoto(false);
   }
 
+  const showingPhoto = !!(user && hasPhoto !== false && photoUrl);
+
   return (
-    <WidgetCard title="사진" className="overflow-hidden">
+    <WidgetCard title="사진" className="overflow-hidden" hideTitle={showingPhoto}>
       {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
       {user === null && (
@@ -91,7 +93,7 @@ export default function PhotoWidget() {
       )}
 
       {user && hasPhoto !== false && photoUrl && (
-        <div className="group relative -mx-5 -mb-5 mt-1 aspect-video bg-bg">
+        <div className="group relative -m-5 aspect-video bg-bg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photoUrl}
