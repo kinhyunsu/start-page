@@ -5,6 +5,7 @@ import NaverSearchWidget from "@/components/widgets/NaverSearchWidget";
 import PhotoWidget from "@/components/widgets/PhotoWidget";
 import CalendarWidget from "@/components/widgets/CalendarWidget";
 import PortfolioWidget from "@/components/widgets/PortfolioWidget";
+import NewsWidget from "@/components/widgets/NewsWidget";
 
 export default function Home() {
   return (
@@ -24,6 +25,7 @@ export default function Home() {
         <PhotoWidget />
         <CalendarWidget />
         <PortfolioWidget />
+        <NewsWidget />
       </DashboardGrid>
     </main>
   );
