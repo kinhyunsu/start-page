@@ -93,7 +93,7 @@ export default function PhotoWidget() {
       )}
 
       {user && hasPhoto !== false && photoUrl && (
-        <div className="group relative -m-5 aspect-video bg-bg">
+        <div className="group relative -m-5 h-full min-h-40 bg-bg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photoUrl}
