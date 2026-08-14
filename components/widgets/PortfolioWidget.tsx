@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useUser } from "@/hooks/useUser";
-import { createClient } from "@/lib/supabase-browser";
+import { signInWithGoogle } from "@/lib/googleAuth";
 import WidgetCard from "./WidgetCard";
 import HoldingsForm from "./HoldingsForm";
 
@@ -26,14 +26,6 @@ export default function PortfolioWidget() {
   const user = useUser();
   const { data, error } = usePortfolio(refreshKey, !!user);
 
-  async function signIn() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-  }
-
   return (
     <WidgetCard title="포트폴리오" className="sm:col-span-2 lg:col-span-3">
       {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
@@ -42,7 +34,7 @@ export default function PortfolioWidget() {
         <div className="py-4 text-center">
           <p className="mb-3 text-sm text-ink-soft">보유 종목을 확인하려면 로그인이 필요합니다.</p>
           <button
-            onClick={signIn}
+            onClick={signInWithGoogle}
             className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-ink"
           >
             Google로 로그인

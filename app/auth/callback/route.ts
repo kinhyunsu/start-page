@@ -7,7 +7,16 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    const refreshToken = data.session?.provider_refresh_token;
+    if (!error && refreshToken && data.user) {
+      await supabase.from("google_tokens").upsert({
+        user_id: data.user.id,
+        refresh_token: refreshToken,
+        updated_at: new Date().toISOString(),
+      });
+    }
   }
 
   return NextResponse.redirect(`${origin}/`);

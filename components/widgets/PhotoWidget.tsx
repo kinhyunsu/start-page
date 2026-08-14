@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase-browser";
+import { signInWithGoogle } from "@/lib/googleAuth";
 import { resizeImage } from "@/lib/resizeImage";
 import WidgetCard from "./WidgetCard";
 
@@ -73,14 +74,6 @@ export default function PhotoWidget() {
     setHasPhoto(false);
   }
 
-  async function signIn() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-  }
-
   return (
     <WidgetCard title="사진" className="overflow-hidden">
       {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
@@ -89,7 +82,7 @@ export default function PhotoWidget() {
         <div className="py-4 text-center">
           <p className="mb-3 text-sm text-ink-soft">사진을 꾸미려면 로그인이 필요합니다.</p>
           <button
-            onClick={signIn}
+            onClick={signInWithGoogle}
             className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-ink"
           >
             Google로 로그인

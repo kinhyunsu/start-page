@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { signInWithGoogle } from "@/lib/googleAuth";
 import { useUser } from "@/hooks/useUser";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -10,14 +11,6 @@ export default function AuthButton() {
   const { displayName, saveNickname } = useProfile(user);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
-
-  async function signIn() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-  }
 
   async function signOut() {
     const supabase = createClient();
@@ -43,7 +36,7 @@ export default function AuthButton() {
   if (user === null) {
     return (
       <button
-        onClick={signIn}
+        onClick={signInWithGoogle}
         className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-ink"
       >
         Google로 로그인
