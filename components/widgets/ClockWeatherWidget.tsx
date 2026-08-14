@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useClock } from "@/hooks/useClock";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { describeWeatherCode } from "@/lib/weatherCodes";
+import { fetchAirQuality, describeAirQuality, type AirQualityReading } from "@/lib/airQuality";
 import WidgetCard from "./WidgetCard";
 
 const CACHE_KEY = "dashboard-weather";
+const AIR_CACHE_KEY = "dashboard-air-quality";
 const REFRESH_INTERVAL_MS = 30 * 60 * 1000;
 
 type WeatherReading = {
@@ -38,12 +40,22 @@ export default function ClockWeatherWidget() {
   const location = useGeolocation();
   const [reading, setReading] = useState<WeatherReading | null>(null);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [airReading, setAirReading] = useState<AirQualityReading | null>(null);
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       try {
         setReading(JSON.parse(cached));
+      } catch {
+        // ignore malformed cache
+      }
+    }
+
+    const cachedAir = localStorage.getItem(AIR_CACHE_KEY);
+    if (cachedAir) {
+      try {
+        setAirReading(JSON.parse(cachedAir));
       } catch {
         // ignore malformed cache
       }
@@ -69,6 +81,30 @@ export default function ClockWeatherWidget() {
 
     load();
     const id = setInterval(load, REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [location]);
+
+  useEffect(() => {
+    if (!location) return;
+
+    let cancelled = false;
+
+    async function loadAir() {
+      try {
+        const data = await fetchAirQuality(location!.lat, location!.lon);
+        if (cancelled) return;
+        setAirReading(data);
+        localStorage.setItem(AIR_CACHE_KEY, JSON.stringify(data));
+      } catch {
+        // 대기질은 부가 정보라 실패해도 조용히 무시
+      }
+    }
+
+    loadAir();
+    const id = setInterval(loadAir, REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -111,6 +147,24 @@ export default function ClockWeatherWidget() {
             </>
           )}
         </div>
+
+        {airReading && (
+          <>
+            <div className="h-px w-full bg-border" />
+            <div className="flex items-baseline gap-2">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ backgroundColor: describeAirQuality(airReading).color }}
+              />
+              <p className="text-xs font-medium text-ink">
+                미세먼지 {describeAirQuality(airReading).label}
+              </p>
+              <p className="font-mono text-xs tabular-nums text-ink-faint">
+                PM10 {Math.round(airReading.pm10)} · PM2.5 {Math.round(airReading.pm25)}
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </WidgetCard>
   );
