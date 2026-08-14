@@ -8,7 +8,6 @@ import WidgetCard from "./WidgetCard";
 
 type Article = {
   title: string;
-  description: string;
   link: string;
   pubDate: string;
   source: string;

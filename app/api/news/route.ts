@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
-import { searchNews, type NewsArticle } from "@/lib/naverNews";
+import { fetchTopStories, searchNews, type NewsArticle } from "@/lib/googleNews";
 
 type GameArticle = NewsArticle & { game: string };
 
@@ -10,11 +10,7 @@ export async function GET(request: Request) {
 
   if (category === "politics" || category === "hot") {
     try {
-      const query = category === "politics" ? "정치" : "속보";
-      const articles = await searchNews(query);
-      if (articles === null) {
-        return NextResponse.json({ error: "네이버 뉴스 API 설정이 필요합니다." }, { status: 200 });
-      }
+      const articles = category === "politics" ? await searchNews("정치") : await fetchTopStories();
       return NextResponse.json({ articles });
     } catch {
       return NextResponse.json({ error: "뉴스를 가져오지 못했습니다." }, { status: 500 });
@@ -44,18 +40,14 @@ export async function GET(request: Request) {
 
     try {
       const results = await Promise.all(
-        gameNames.map(async (name) => {
-          const articles = await searchNews(`${name} 업데이트`, 4);
-          return { name, articles };
-        })
+        gameNames.map(async (name) => ({
+          name,
+          articles: await searchNews(`${name} 업데이트`, 4),
+        }))
       );
 
-      if (results.some((r) => r.articles === null)) {
-        return NextResponse.json({ error: "네이버 뉴스 API 설정이 필요합니다." }, { status: 200 });
-      }
-
       const articles: GameArticle[] = results.flatMap((r) =>
-        (r.articles as NewsArticle[]).map((a) => ({ ...a, game: r.name }))
+        r.articles.map((a) => ({ ...a, game: r.name }))
       );
       articles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
