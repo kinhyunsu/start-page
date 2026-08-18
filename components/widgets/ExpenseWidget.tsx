@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase-browser";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { nextBillingDate, daysUntil, formatMoney, formatBillingLabel } from "@/lib/billing";
 import WidgetCard from "./WidgetCard";
 
 type Expense = {
@@ -14,6 +15,8 @@ type Expense = {
   spent_on: string;
 };
 
+type FixedExpense = { id: string; name: string; amount: number; billing_day: number };
+
 const CATEGORIES = ["식비", "교통", "쇼핑", "문화·여가", "고정비", "기타"];
 
 function todayLocal() {
@@ -23,20 +26,23 @@ function todayLocal() {
 }
 
 const emptyForm = { amount: "", category: CATEGORIES[0], spent_on: todayLocal(), memo: "" };
+const emptyFixedForm = { name: "", amount: "", billing_day: "1" };
 
 const fieldClass =
   "rounded-lg border border-border bg-bg px-2 py-1.5 text-sm text-ink outline-none focus:border-accent";
 
-function formatWon(amount: number) {
-  return `₩${new Intl.NumberFormat("ko-KR").format(amount)}`;
-}
+const formatWon = (amount: number) => formatMoney(amount, "KRW");
 
 export default function ExpenseWidget() {
   const user = useUser();
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[] | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [fixedForm, setFixedForm] = useState(emptyFixedForm);
   const [submitting, setSubmitting] = useState(false);
+  const [fixedSubmitting, setFixedSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFixed, setShowFixed] = useState(false);
 
   async function load() {
     if (!user) return;
@@ -49,10 +55,21 @@ export default function ExpenseWidget() {
     if (loadError) {
       setError("지출 내역을 불러오지 못했습니다. Supabase에 expenses 테이블이 있는지 확인해주세요.");
       setExpenses([]);
-      return;
+    } else {
+      setError(null);
+      setExpenses(data ?? []);
     }
-    setError(null);
-    setExpenses(data ?? []);
+
+    const { data: fixedData, error: fixedError } = await supabase
+      .from("fixed_expenses")
+      .select("id, name, amount, billing_day")
+      .order("billing_day", { ascending: true });
+    if (fixedError) {
+      setError("고정지출을 불러오지 못했습니다. Supabase에 fixed_expenses 테이블이 있는지 확인해주세요.");
+      setFixedExpenses([]);
+    } else {
+      setFixedExpenses(fixedData ?? []);
+    }
   }
 
   useEffect(() => {
@@ -87,9 +104,37 @@ export default function ExpenseWidget() {
     load();
   }
 
+  async function handleAddFixed(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setFixedSubmitting(true);
+    const supabase = createClient();
+    const { error: insertError } = await supabase.from("fixed_expenses").insert({
+      user_id: user.id,
+      name: fixedForm.name.trim(),
+      amount: Number(fixedForm.amount),
+      billing_day: Number(fixedForm.billing_day),
+    });
+    setFixedSubmitting(false);
+    if (insertError) {
+      setError("고정지출 추가에 실패했습니다: " + insertError.message);
+      return;
+    }
+    setFixedForm(emptyFixedForm);
+    load();
+  }
+
+  async function handleDeleteFixed(id: string) {
+    const supabase = createClient();
+    await supabase.from("fixed_expenses").delete().eq("id", id);
+    load();
+  }
+
   const thisMonth = todayLocal().slice(0, 7);
   const monthExpenses = expenses?.filter((e) => e.spent_on.slice(0, 7) === thisMonth) ?? [];
-  const monthTotal = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const adHocTotal = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const fixedTotal = (fixedExpenses ?? []).reduce((sum, e) => sum + e.amount, 0);
+  const monthTotal = adHocTotal + fixedTotal;
   const byCategory = monthExpenses.reduce<Record<string, number>>((acc, e) => {
     acc[e.category] = (acc[e.category] ?? 0) + e.amount;
     return acc;
@@ -180,6 +225,11 @@ export default function ExpenseWidget() {
                 {formatWon(monthTotal)}
                 <span className="ml-1 text-xs font-normal text-ink-faint">이번 달 합계</span>
               </p>
+              {fixedTotal > 0 && (
+                <p className="mb-1 text-xs text-ink-faint">
+                  (변동 지출 {formatWon(adHocTotal)} + 고정지출 {formatWon(fixedTotal)})
+                </p>
+              )}
 
               {Object.keys(byCategory).length > 0 && (
                 <p className="mb-2 text-xs text-ink-faint">
@@ -216,6 +266,90 @@ export default function ExpenseWidget() {
                   </li>
                 ))}
               </ul>
+
+              <button
+                onClick={() => setShowFixed((v) => !v)}
+                className="mt-3 text-xs font-medium text-accent hover:text-accent-ink"
+              >
+                {showFixed ? "고정지출 관리 닫기" : "고정지출 관리"}
+              </button>
+
+              {showFixed && (
+                <div className="mt-2 border-t border-border pt-3">
+                  <form onSubmit={handleAddFixed} className="mb-2 grid grid-cols-2 gap-1.5">
+                    <input
+                      required
+                      placeholder="예: 월세, 보험료"
+                      value={fixedForm.name}
+                      onChange={(e) => setFixedForm({ ...fixedForm, name: e.target.value })}
+                      className={`${fieldClass} col-span-2`}
+                    />
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      step="any"
+                      placeholder="금액"
+                      value={fixedForm.amount}
+                      onChange={(e) => setFixedForm({ ...fixedForm, amount: e.target.value })}
+                      className={`${fieldClass} font-mono`}
+                    />
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      max="31"
+                      placeholder="결제일(1~31)"
+                      value={fixedForm.billing_day}
+                      onChange={(e) => setFixedForm({ ...fixedForm, billing_day: e.target.value })}
+                      className={`${fieldClass} font-mono`}
+                    />
+                    <button
+                      type="submit"
+                      disabled={fixedSubmitting}
+                      className="col-span-2 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-ink disabled:opacity-50"
+                    >
+                      고정지출 추가
+                    </button>
+                  </form>
+
+                  {fixedExpenses === null && (
+                    <p className="text-sm text-ink-faint">불러오는 중...</p>
+                  )}
+                  {fixedExpenses !== null && fixedExpenses.length === 0 && (
+                    <p className="text-sm text-ink-faint">등록된 고정지출이 없습니다.</p>
+                  )}
+                  {fixedExpenses !== null && fixedExpenses.length > 0 && (
+                    <ul className="divide-y divide-border text-sm">
+                      {fixedExpenses.map((f) => {
+                        const next = nextBillingDate(f.billing_day);
+                        const dLeft = daysUntil(next);
+                        return (
+                          <li key={f.id} className="group flex items-center justify-between py-1.5">
+                            <span>
+                              <span className="block text-ink">{f.name}</span>
+                              <span className="block text-xs text-ink-faint">
+                                {formatBillingLabel(next, dLeft)}
+                              </span>
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <span className="font-mono text-xs tabular-nums text-ink-soft">
+                                {formatWon(f.amount)}
+                              </span>
+                              <button
+                                onClick={() => handleDeleteFixed(f.id)}
+                                className="text-xs text-ink-faint opacity-0 group-hover:opacity-100 hover:text-red-500"
+                              >
+                                삭제
+                              </button>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
             </>
           )}
         </>

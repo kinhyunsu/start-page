@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase-browser";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { nextBillingDate, daysUntil, formatMoney, formatBillingLabel } from "@/lib/billing";
 import WidgetCard from "./WidgetCard";
 
 type Subscription = {
@@ -87,38 +88,6 @@ function IconBadge({ icon, size = 6 }: { icon: Icon; size?: number }) {
       {icon.badge}
     </span>
   );
-}
-
-function formatBillingLabel(date: Date, dLeft: number) {
-  const md = `${date.getMonth() + 1}월 ${date.getDate()}일`;
-  if (dLeft === 0) return `오늘 결제 (${md})`;
-  if (dLeft === 1) return `내일 결제 (${md})`;
-  return `${md} 결제 · D-${dLeft}`;
-}
-
-function nextBillingDate(billingDay: number) {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const today = now.getDate();
-
-  const daysInThisMonth = new Date(year, month + 1, 0).getDate();
-  const clampedThis = Math.min(billingDay, daysInThisMonth);
-  if (today <= clampedThis) return new Date(year, month, clampedThis);
-
-  const daysInNextMonth = new Date(year, month + 2, 0).getDate();
-  return new Date(year, month + 1, Math.min(billingDay, daysInNextMonth));
-}
-
-function daysUntil(date: Date) {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((date.getTime() - startOfToday.getTime()) / 86400000);
-}
-
-function formatMoney(amount: number, currency: "KRW" | "USD") {
-  const symbol = currency === "KRW" ? "₩" : "$";
-  return `${symbol}${new Intl.NumberFormat("ko-KR").format(amount)}`;
 }
 
 type SubWithSchedule = Subscription & { next: Date; dLeft: number };
