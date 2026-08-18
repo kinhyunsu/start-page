@@ -4,6 +4,9 @@ import ClockWeatherWidget from "@/components/widgets/ClockWeatherWidget";
 import NaverSearchWidget from "@/components/widgets/NaverSearchWidget";
 import PhotoWidget from "@/components/widgets/PhotoWidget";
 import CalendarWidget from "@/components/widgets/CalendarWidget";
+import TodoWidget from "@/components/widgets/TodoWidget";
+import SubscriptionWidget from "@/components/widgets/SubscriptionWidget";
+import ExpenseWidget from "@/components/widgets/ExpenseWidget";
 import PortfolioWidget from "@/components/widgets/PortfolioWidget";
 import NewsWidget from "@/components/widgets/NewsWidget";
 
@@ -24,6 +27,9 @@ export default function Home() {
         <ClockWeatherWidget />
         <PhotoWidget />
         <CalendarWidget />
+        <TodoWidget />
+        <SubscriptionWidget />
+        <ExpenseWidget />
         <PortfolioWidget />
         <NewsWidget />
       </DashboardGrid>
