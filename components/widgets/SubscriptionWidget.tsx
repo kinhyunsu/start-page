@@ -19,6 +19,29 @@ const emptyForm = { name: "", price: "", currency: "KRW" as "KRW" | "USD", billi
 const fieldClass =
   "rounded-lg border border-border bg-bg px-2 py-1.5 text-sm text-ink outline-none focus:border-accent";
 
+type Preset = { name: string; price: number; currency: "KRW" | "USD"; color: string; badge: string };
+
+const PRESETS: Preset[] = [
+  { name: "넷플릭스", price: 13500, currency: "KRW", color: "#E50914", badge: "N" },
+  { name: "유튜브 프리미엄", price: 14900, currency: "KRW", color: "#FF0000", badge: "▶" },
+  { name: "디즈니+", price: 9900, currency: "KRW", color: "#113CCF", badge: "D+" },
+  { name: "쿠팡 와우", price: 7890, currency: "KRW", color: "#3689E6", badge: "C" },
+  { name: "티빙", price: 9500, currency: "KRW", color: "#FF0031", badge: "T" },
+];
+
+const FALLBACK_COLORS = ["#6D5EF0", "#0EA5A5", "#E8873D", "#5B8DEF", "#C2418C", "#3FA05E"];
+
+function iconFor(name: string) {
+  const preset = PRESETS.find((p) => p.name === name.trim());
+  if (preset) return { color: preset.color, badge: preset.badge };
+
+  const trimmed = name.trim();
+  const hash = Array.from(trimmed).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  const color = FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
+  const badge = trimmed.charAt(0).toUpperCase() || "?";
+  return { color, badge };
+}
+
 function nextBillingDate(billingDay: number) {
   const now = new Date();
   const year = now.getFullYear();
@@ -112,6 +135,27 @@ export default function SubscriptionWidget() {
 
       {user && (
         <>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {PRESETS.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({ ...f, name: p.name, price: String(p.price), currency: p.currency }))
+                }
+                className="flex items-center gap-1.5 rounded-full border border-border bg-bg px-2 py-1 text-xs text-ink-soft hover:border-accent hover:text-ink"
+              >
+                <span
+                  style={{ backgroundColor: p.color }}
+                  className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                >
+                  {p.badge}
+                </span>
+                {p.name}
+              </button>
+            ))}
+          </div>
+
           <form onSubmit={handleAdd} className="mb-3 grid grid-cols-2 gap-1.5">
             <input
               required
@@ -167,9 +211,18 @@ export default function SubscriptionWidget() {
                   const next = nextBillingDate(s.billing_day);
                   const dLeft = daysUntil(next);
                   const soon = dLeft <= 3;
+                  const icon = iconFor(s.name);
                   return (
                     <li key={s.id} className="group flex items-center justify-between py-1.5">
-                      <span className="text-ink">{s.name}</span>
+                      <span className="flex items-center gap-2 text-ink">
+                        <span
+                          style={{ backgroundColor: icon.color }}
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                        >
+                          {icon.badge}
+                        </span>
+                        {s.name}
+                      </span>
                       <span className="flex items-center gap-2">
                         <span className="font-mono text-xs tabular-nums text-ink-soft">
                           {formatMoney(s.price, s.currency)}
