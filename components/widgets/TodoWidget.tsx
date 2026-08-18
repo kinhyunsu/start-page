@@ -14,14 +14,21 @@ export default function TodoWidget() {
   const [input, setInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     if (!user) return;
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("todos")
       .select("id, title, done")
       .order("created_at", { ascending: true });
+    if (loadError) {
+      setError("할 일을 불러오지 못했습니다. Supabase에 todos 테이블이 있는지 확인해주세요.");
+      setTodos([]);
+      return;
+    }
+    setError(null);
     setTodos(data ?? []);
   }
 
@@ -36,9 +43,13 @@ export default function TodoWidget() {
     if (!title || !user) return;
     setSubmitting(true);
     const supabase = createClient();
-    await supabase.from("todos").insert({ user_id: user.id, title });
-    setInput("");
+    const { error: insertError } = await supabase.from("todos").insert({ user_id: user.id, title });
     setSubmitting(false);
+    if (insertError) {
+      setError("추가에 실패했습니다: " + insertError.message);
+      return;
+    }
+    setInput("");
     load();
   }
 
@@ -91,11 +102,15 @@ export default function TodoWidget() {
             </button>
           </form>
 
+          {error && (
+            <p className="mb-2 rounded-lg bg-red-500/10 px-2 py-1.5 text-xs text-red-500">{error}</p>
+          )}
+
           {todos === null && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
           {todos !== null && (
             <>
-              {active.length === 0 && done.length === 0 && (
+              {!error && active.length === 0 && done.length === 0 && (
                 <p className="text-sm text-ink-faint">할 일이 없습니다.</p>
               )}
               <ul className="space-y-1 text-sm">

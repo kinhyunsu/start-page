@@ -19,7 +19,7 @@ const emptyForm = { name: "", price: "", currency: "KRW" as "KRW" | "USD", billi
 const fieldClass =
   "rounded-lg border border-border bg-bg px-2 py-1.5 text-sm text-ink outline-none focus:border-accent";
 
-type Preset = {
+type ServiceInfo = {
   name: string;
   price: number;
   currency: "KRW" | "USD";
@@ -28,19 +28,21 @@ type Preset = {
   logoSlug?: string; // simpleicons.org 슬러그 — 있으면 실제 브랜드 로고 사용
 };
 
-const PRESETS: Preset[] = [
+// logoSlug가 있는 건 simpleicons.org에 실제 로고가 있는 것만 (무료 오픈소스 아이콘셋이라
+// 한국 특화 서비스는 대부분 없음 — 그런 경우는 브랜드 색상 배지로 대신 표시한다.
+const SERVICES: ServiceInfo[] = [
   { name: "넷플릭스", price: 13500, currency: "KRW", color: "#E50914", badge: "N", logoSlug: "netflix" },
-  {
-    name: "유튜브 프리미엄",
-    price: 14900,
-    currency: "KRW",
-    color: "#FF0000",
-    badge: "Y",
-    logoSlug: "youtube",
-  },
+  { name: "유튜브 프리미엄", price: 14900, currency: "KRW", color: "#FF0000", badge: "Y", logoSlug: "youtube" },
   { name: "디즈니+", price: 9900, currency: "KRW", color: "#113CCF", badge: "D+" },
-  { name: "쿠팡 와우", price: 7890, currency: "KRW", color: "#3689E6", badge: "C" },
   { name: "티빙", price: 9500, currency: "KRW", color: "#FF0031", badge: "T" },
+  { name: "웨이브", price: 7900, currency: "KRW", color: "#1AA5FF", badge: "W" },
+  { name: "왓챠", price: 7900, currency: "KRW", color: "#FF0558", badge: "왓" },
+  { name: "멜론", price: 10900, currency: "KRW", color: "#00CD3C", badge: "M" },
+  { name: "지니뮤직", price: 10900, currency: "KRW", color: "#1E9AE2", badge: "G" },
+  { name: "배민클럽", price: 3990, currency: "KRW", color: "#2AC1BC", badge: "B" },
+  { name: "쿠팡 와우", price: 7890, currency: "KRW", color: "#3689E6", badge: "C" },
+  { name: "네이버플러스", price: 4900, currency: "KRW", color: "#03C75A", badge: "N", logoSlug: "naver" },
+  { name: "스포티파이", price: 11900, currency: "KRW", color: "#1ED760", badge: "S", logoSlug: "spotify" },
 ];
 
 const FALLBACK_COLORS = ["#6D5EF0", "#0EA5A5", "#E8873D", "#5B8DEF", "#C2418C", "#3FA05E"];
@@ -48,12 +50,12 @@ const FALLBACK_COLORS = ["#6D5EF0", "#0EA5A5", "#E8873D", "#5B8DEF", "#C2418C", 
 type Icon = { color: string; badge: string; logoUrl?: string };
 
 function iconFor(name: string): Icon {
-  const preset = PRESETS.find((p) => p.name === name.trim());
-  if (preset) {
+  const match = SERVICES.find((p) => p.name === name.trim());
+  if (match) {
     return {
-      color: preset.color,
-      badge: preset.badge,
-      logoUrl: preset.logoSlug ? `https://cdn.simpleicons.org/${preset.logoSlug}` : undefined,
+      color: match.color,
+      badge: match.badge,
+      logoUrl: match.logoSlug ? `https://cdn.simpleicons.org/${match.logoSlug}` : undefined,
     };
   }
 
@@ -124,14 +126,21 @@ export default function SubscriptionWidget() {
   const [subs, setSubs] = useState<Subscription[] | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     if (!user) return;
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("subscriptions")
       .select("id, name, price, currency, billing_day")
       .order("billing_day", { ascending: true });
+    if (loadError) {
+      setError("구독 목록을 불러오지 못했습니다. Supabase에 subscriptions 테이블이 있는지 확인해주세요.");
+      setSubs([]);
+      return;
+    }
+    setError(null);
     setSubs(data ?? []);
   }
 
@@ -145,15 +154,19 @@ export default function SubscriptionWidget() {
     if (!user) return;
     setSubmitting(true);
     const supabase = createClient();
-    await supabase.from("subscriptions").insert({
+    const { error: insertError } = await supabase.from("subscriptions").insert({
       user_id: user.id,
       name: form.name.trim(),
       price: Number(form.price),
       currency: form.currency,
       billing_day: Number(form.billing_day),
     });
-    setForm(emptyForm);
     setSubmitting(false);
+    if (insertError) {
+      setError("추가에 실패했습니다: " + insertError.message);
+      return;
+    }
+    setForm(emptyForm);
     load();
   }
 
@@ -187,8 +200,9 @@ export default function SubscriptionWidget() {
 
       {user && (
         <>
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {PRESETS.map((p) => (
+          <p className="mb-1.5 text-xs text-ink-faint">자주 쓰는 구독 — 클릭하면 아래 입력칸에 채워져요</p>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {SERVICES.map((p) => (
               <button
                 key={p.name}
                 type="button"
@@ -203,48 +217,64 @@ export default function SubscriptionWidget() {
             ))}
           </div>
 
-          <form onSubmit={handleAdd} className="mb-3 grid grid-cols-2 gap-1.5">
-            <input
-              required
-              placeholder="이름"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className={`${fieldClass} col-span-2`}
-            />
-            <input
-              required
-              type="number"
-              min="0"
-              step="any"
-              placeholder="금액"
-              value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className={`${fieldClass} font-mono`}
-            />
-            <select
-              value={form.currency}
-              onChange={(e) => setForm({ ...form, currency: e.target.value as "KRW" | "USD" })}
-              className={fieldClass}
-            >
-              <option value="KRW">KRW</option>
-              <option value="USD">USD</option>
-            </select>
-            <input
-              required
-              type="number"
-              min="1"
-              max="31"
-              placeholder="결제일(1~31)"
-              value={form.billing_day}
-              onChange={(e) => setForm({ ...form, billing_day: e.target.value })}
-              className={`${fieldClass} font-mono`}
-            />
+          {error && (
+            <p className="mb-2 rounded-lg bg-red-500/10 px-2 py-1.5 text-xs text-red-500">{error}</p>
+          )}
+
+          <form onSubmit={handleAdd} className="mb-3 grid grid-cols-2 gap-2">
+            <label className="col-span-2 flex flex-col gap-0.5 text-xs text-ink-faint">
+              구독 이름 (목록에 없으면 직접 입력)
+              <input
+                required
+                placeholder="예: 배달의민족, 리디셀렉트..."
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className={fieldClass}
+              />
+            </label>
+            <label className="flex flex-col gap-0.5 text-xs text-ink-faint">
+              월 금액
+              <input
+                required
+                type="number"
+                min="0"
+                step="any"
+                placeholder="9900"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                className={`${fieldClass} font-mono`}
+              />
+            </label>
+            <label className="flex flex-col gap-0.5 text-xs text-ink-faint">
+              통화
+              <select
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value as "KRW" | "USD" })}
+                className={fieldClass}
+              >
+                <option value="KRW">KRW (원)</option>
+                <option value="USD">USD (달러)</option>
+              </select>
+            </label>
+            <label className="col-span-2 flex flex-col gap-0.5 text-xs text-ink-faint">
+              매월 결제일 (1~31일 중 하루)
+              <input
+                required
+                type="number"
+                min="1"
+                max="31"
+                placeholder="예: 15"
+                value={form.billing_day}
+                onChange={(e) => setForm({ ...form, billing_day: e.target.value })}
+                className={`${fieldClass} font-mono`}
+              />
+            </label>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-ink disabled:opacity-50"
+              className="col-span-2 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-ink disabled:opacity-50"
             >
-              추가
+              구독 추가
             </button>
           </form>
 
@@ -252,7 +282,9 @@ export default function SubscriptionWidget() {
 
           {subs !== null && (
             <>
-              {subs.length === 0 && <p className="text-sm text-ink-faint">등록된 구독이 없습니다.</p>}
+              {!error && subs.length === 0 && (
+                <p className="text-sm text-ink-faint">등록된 구독이 없습니다.</p>
+              )}
               <ul className="divide-y divide-border text-sm">
                 {subs.map((s) => {
                   const next = nextBillingDate(s.billing_day);

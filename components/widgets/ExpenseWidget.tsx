@@ -36,15 +36,22 @@ export default function ExpenseWidget() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     if (!user) return;
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("expenses")
       .select("id, amount, category, memo, spent_on")
       .order("spent_on", { ascending: false })
       .order("created_at", { ascending: false });
+    if (loadError) {
+      setError("지출 내역을 불러오지 못했습니다. Supabase에 expenses 테이블이 있는지 확인해주세요.");
+      setExpenses([]);
+      return;
+    }
+    setError(null);
     setExpenses(data ?? []);
   }
 
@@ -58,15 +65,19 @@ export default function ExpenseWidget() {
     if (!user) return;
     setSubmitting(true);
     const supabase = createClient();
-    await supabase.from("expenses").insert({
+    const { error: insertError } = await supabase.from("expenses").insert({
       user_id: user.id,
       amount: Number(form.amount),
       category: form.category,
       memo: form.memo.trim() || null,
       spent_on: form.spent_on,
     });
-    setForm({ ...emptyForm, spent_on: form.spent_on });
     setSubmitting(false);
+    if (insertError) {
+      setError("추가에 실패했습니다: " + insertError.message);
+      return;
+    }
+    setForm({ ...emptyForm, spent_on: form.spent_on });
     load();
   }
 
@@ -102,48 +113,64 @@ export default function ExpenseWidget() {
 
       {user && (
         <>
-          <form onSubmit={handleAdd} className="mb-3 grid grid-cols-2 gap-1.5">
-            <input
-              required
-              type="number"
-              min="0"
-              step="any"
-              placeholder="금액"
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              className={`${fieldClass} font-mono`}
-            />
-            <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className={fieldClass}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={form.spent_on}
-              onChange={(e) => setForm({ ...form, spent_on: e.target.value })}
-              className={fieldClass}
-            />
-            <input
-              placeholder="메모(선택)"
-              value={form.memo}
-              onChange={(e) => setForm({ ...form, memo: e.target.value })}
-              className={fieldClass}
-            />
+          <form onSubmit={handleAdd} className="mb-3 grid grid-cols-2 gap-2">
+            <label className="flex flex-col gap-0.5 text-xs text-ink-faint">
+              금액
+              <input
+                required
+                type="number"
+                min="0"
+                step="any"
+                placeholder="9000"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                className={`${fieldClass} font-mono`}
+              />
+            </label>
+            <label className="flex flex-col gap-0.5 text-xs text-ink-faint">
+              카테고리
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className={fieldClass}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5 text-xs text-ink-faint">
+              날짜
+              <input
+                type="date"
+                value={form.spent_on}
+                onChange={(e) => setForm({ ...form, spent_on: e.target.value })}
+                className={fieldClass}
+              />
+            </label>
+            <label className="flex flex-col gap-0.5 text-xs text-ink-faint">
+              메모 (선택)
+              <input
+                placeholder="예: 점심 식사"
+                value={form.memo}
+                onChange={(e) => setForm({ ...form, memo: e.target.value })}
+                className={fieldClass}
+              />
+            </label>
             <button
               type="submit"
               disabled={submitting}
               className="col-span-2 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-ink disabled:opacity-50"
             >
-              추가
+              지출 추가
             </button>
           </form>
+
+          {error && (
+            <p className="mb-2 rounded-lg bg-red-500/10 px-2 py-1.5 text-xs text-red-500">{error}</p>
+          )}
 
           {expenses === null && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
@@ -162,7 +189,7 @@ export default function ExpenseWidget() {
                 </p>
               )}
 
-              {monthExpenses.length === 0 && (
+              {!error && monthExpenses.length === 0 && (
                 <p className="text-sm text-ink-faint">이번 달 지출이 없습니다.</p>
               )}
 
