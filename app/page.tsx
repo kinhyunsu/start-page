@@ -1,4 +1,5 @@
 import AuthButton from "@/components/AuthButton";
+import LoginBanner from "@/components/LoginBanner";
 import DashboardGrid from "@/components/layout/DashboardGrid";
 import ClockWeatherWidget from "@/components/widgets/ClockWeatherWidget";
 import NaverSearchWidget from "@/components/widgets/NaverSearchWidget";
@@ -24,6 +25,7 @@ export default function Home() {
           <AuthButton />
         </div>
       </header>
+      <LoginBanner />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-6 sm:gap-6 sm:p-8 lg:flex-row lg:items-start">
         <aside className="lg:w-64 lg:shrink-0">
           <RoutineWidget />
@@ -41,6 +43,16 @@ export default function Home() {
           <NewsWidget />
         </DashboardGrid>
       </div>
+      <footer className="mt-auto border-t border-border py-6 text-center text-xs text-ink-faint">
+        <a
+          href="https://github.com/kinhyunsu/start-page"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-ink-soft"
+        >
+          GitHub
+        </a>
+      </footer>
     </main>
   );
 }

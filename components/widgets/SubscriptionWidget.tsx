@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase-browser";
-import { signInWithGoogle } from "@/lib/googleAuth";
 import { nextBillingDate, daysUntil, formatMoney, formatBillingLabel } from "@/lib/billing";
 import WidgetCard from "./WidgetCard";
 
@@ -141,7 +140,7 @@ export default function SubscriptionWidget() {
       .select("id, name, price, currency, billing_day")
       .order("billing_day", { ascending: true });
     if (loadError) {
-      setError("구독 목록을 불러오지 못했습니다. Supabase에 subscriptions 테이블이 있는지 확인해주세요.");
+      setError("정기 결제 목록을 불러오지 못했습니다. Supabase에 subscriptions 테이블이 있는지 확인해주세요.");
       setSubs([]);
       return;
     }
@@ -198,24 +197,16 @@ export default function SubscriptionWidget() {
   const hiddenCount = scheduled.length - preview.length;
 
   return (
-    <WidgetCard title="구독 관리">
+    <WidgetCard title="정기 결제">
       {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
       {user === null && (
-        <div className="py-4 text-center">
-          <p className="mb-3 text-sm text-ink-soft">구독 관리를 하려면 로그인이 필요합니다.</p>
-          <button
-            onClick={signInWithGoogle}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-ink"
-          >
-            Google로 로그인
-          </button>
-        </div>
+        <p className="py-4 text-center text-sm text-ink-faint">로그인하면 이용할 수 있어요</p>
       )}
 
       {user && (
         <>
-          <p className="mb-1.5 text-xs text-ink-faint">자주 쓰는 구독 — 클릭하면 아래 입력칸에 채워져요</p>
+          <p className="mb-1.5 text-xs text-ink-faint">자주 쓰는 서비스 — 클릭하면 아래 입력칸에 채워져요</p>
           <div className="mb-1.5 flex flex-wrap gap-1.5">
             {(showAllPresets ? SERVICES : SERVICES.slice(0, PRESET_PREVIEW_COUNT)).map((p) => (
               <button
@@ -245,10 +236,10 @@ export default function SubscriptionWidget() {
 
           <form onSubmit={handleAdd} className="mb-3 grid grid-cols-2 gap-2">
             <label className="col-span-2 flex flex-col gap-0.5 text-xs text-ink-faint">
-              구독 이름 (목록에 없으면 직접 입력)
+              이름 (구독 서비스, 월세·보험료 등 자유 입력)
               <input
                 required
-                placeholder="예: 배달의민족, 리디셀렉트..."
+                placeholder="예: 월세, 배달의민족, 리디셀렉트..."
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className={fieldClass}
@@ -296,7 +287,7 @@ export default function SubscriptionWidget() {
               disabled={submitting}
               className="col-span-2 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-ink disabled:opacity-50"
             >
-              구독 추가
+              정기 결제 추가
             </button>
           </form>
 
@@ -305,12 +296,12 @@ export default function SubscriptionWidget() {
           {subs !== null && (
             <>
               {!error && subs.length === 0 && (
-                <p className="text-sm text-ink-faint">등록된 구독이 없습니다.</p>
+                <p className="text-sm text-ink-faint">등록된 정기 결제가 없습니다.</p>
               )}
 
               {scheduled.length > 0 && (
                 <p className="mb-1 text-xs text-ink-faint">
-                  총 {scheduled.length}개 구독 · 다음 결제:{" "}
+                  총 {scheduled.length}개 정기 결제 · 다음 결제:{" "}
                   <span className="font-medium text-ink-soft">{scheduled[0].name}</span> (
                   {formatBillingLabel(scheduled[0].next, scheduled[0].dLeft)})
                 </p>
@@ -354,7 +345,7 @@ export default function SubscriptionWidget() {
             className="max-h-[80vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-xl"
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-ink">전체 구독 ({scheduled.length})</h3>
+              <h3 className="text-sm font-semibold text-ink">전체 정기 결제 ({scheduled.length})</h3>
               <button
                 onClick={() => setShowAll(false)}
                 className="text-ink-faint hover:text-ink"

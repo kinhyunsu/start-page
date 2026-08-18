@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useUser } from "@/hooks/useUser";
-import { signInWithGoogle } from "@/lib/googleAuth";
 import WidgetCard from "./WidgetCard";
 import HoldingsForm from "./HoldingsForm";
 
@@ -31,15 +30,7 @@ export default function PortfolioWidget() {
       {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
       {user === null && (
-        <div className="py-4 text-center">
-          <p className="mb-3 text-sm text-ink-soft">보유 종목을 확인하려면 로그인이 필요합니다.</p>
-          <button
-            onClick={signInWithGoogle}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-ink"
-          >
-            Google로 로그인
-          </button>
-        </div>
+        <p className="py-4 text-center text-sm text-ink-faint">로그인하면 이용할 수 있어요</p>
       )}
 
       {user && error && !data && <p className="text-sm text-red-500">{error}</p>}

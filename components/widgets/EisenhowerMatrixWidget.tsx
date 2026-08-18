@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase-browser";
-import { signInWithGoogle } from "@/lib/googleAuth";
 import WidgetCard from "./WidgetCard";
 
 type MatrixTask = {
@@ -91,15 +90,7 @@ export default function EisenhowerMatrixWidget() {
       {user === undefined && <p className="text-sm text-ink-faint">불러오는 중...</p>}
 
       {user === null && (
-        <div className="py-4 text-center">
-          <p className="mb-3 text-sm text-ink-soft">사분면 시간관리를 쓰려면 로그인이 필요합니다.</p>
-          <button
-            onClick={signInWithGoogle}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-ink"
-          >
-            Google로 로그인
-          </button>
-        </div>
+        <p className="py-4 text-center text-sm text-ink-faint">로그인하면 이용할 수 있어요</p>
       )}
 
       {user && (
