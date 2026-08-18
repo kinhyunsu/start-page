@@ -6,10 +6,9 @@ import NaverSearchWidget from "@/components/widgets/NaverSearchWidget";
 import PhotoWidget from "@/components/widgets/PhotoWidget";
 import CalendarWidget from "@/components/widgets/CalendarWidget";
 import RoutineWidget from "@/components/widgets/RoutineWidget";
-import EisenhowerMatrixWidget from "@/components/widgets/EisenhowerMatrixWidget";
 import SubscriptionWidget from "@/components/widgets/SubscriptionWidget";
 import ExpenseWidget from "@/components/widgets/ExpenseWidget";
-import JournalWidget from "@/components/widgets/JournalWidget";
+import MemoWidget from "@/components/widgets/MemoWidget";
 import PortfolioWidget from "@/components/widgets/PortfolioWidget";
 import NewsWidget from "@/components/widgets/NewsWidget";
 
@@ -34,11 +33,10 @@ export default function Home() {
           <NaverSearchWidget />
           <ClockWeatherWidget />
           <PhotoWidget />
+          <MemoWidget />
           <CalendarWidget />
-          <EisenhowerMatrixWidget />
           <SubscriptionWidget />
           <ExpenseWidget />
-          <JournalWidget />
           <PortfolioWidget />
           <NewsWidget />
         </DashboardGrid>
