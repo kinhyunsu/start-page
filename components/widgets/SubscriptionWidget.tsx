@@ -153,6 +153,7 @@ function SubRow({ sub, onDelete }: { sub: SubWithSchedule; onDelete: (id: string
 }
 
 const PREVIEW_COUNT = 3;
+const PRESET_PREVIEW_COUNT = 4;
 
 export default function SubscriptionWidget() {
   const user = useUser();
@@ -161,6 +162,7 @@ export default function SubscriptionWidget() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [showAllPresets, setShowAllPresets] = useState(false);
 
   async function load() {
     if (!user) return;
@@ -245,8 +247,8 @@ export default function SubscriptionWidget() {
       {user && (
         <>
           <p className="mb-1.5 text-xs text-ink-faint">자주 쓰는 구독 — 클릭하면 아래 입력칸에 채워져요</p>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {SERVICES.map((p) => (
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {(showAllPresets ? SERVICES : SERVICES.slice(0, PRESET_PREVIEW_COUNT)).map((p) => (
               <button
                 key={p.name}
                 type="button"
@@ -260,6 +262,13 @@ export default function SubscriptionWidget() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => setShowAllPresets((v) => !v)}
+            className="mb-3 text-xs font-medium text-accent hover:text-accent-ink"
+          >
+            {showAllPresets ? "간단히 보기 ▲" : `더보기 (${SERVICES.length - PRESET_PREVIEW_COUNT}개) ▼`}
+          </button>
 
           {error && (
             <p className="mb-2 rounded-lg bg-red-500/10 px-2 py-1.5 text-xs text-red-500">{error}</p>
