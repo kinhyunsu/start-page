@@ -121,12 +121,46 @@ function formatMoney(amount: number, currency: "KRW" | "USD") {
   return `${symbol}${new Intl.NumberFormat("ko-KR").format(amount)}`;
 }
 
+type SubWithSchedule = Subscription & { next: Date; dLeft: number };
+
+function SubRow({ sub, onDelete }: { sub: SubWithSchedule; onDelete: (id: string) => void }) {
+  const soon = sub.dLeft <= 3;
+  const icon = iconFor(sub.name);
+  return (
+    <li className="group flex items-start justify-between gap-2 py-2">
+      <span className="flex items-center gap-2">
+        <IconBadge icon={icon} size={7} />
+        <span>
+          <span className="block text-ink">{sub.name}</span>
+          <span className={`block text-xs ${soon ? "font-semibold text-accent" : "text-ink-faint"}`}>
+            {formatBillingLabel(sub.next, sub.dLeft)}
+          </span>
+        </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="font-mono text-xs tabular-nums text-ink-soft">
+          {formatMoney(sub.price, sub.currency)}
+        </span>
+        <button
+          onClick={() => onDelete(sub.id)}
+          className="text-xs text-ink-faint opacity-0 group-hover:opacity-100 hover:text-red-500"
+        >
+          삭제
+        </button>
+      </span>
+    </li>
+  );
+}
+
+const PREVIEW_COUNT = 3;
+
 export default function SubscriptionWidget() {
   const user = useUser();
   const [subs, setSubs] = useState<Subscription[] | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   async function load() {
     if (!user) return;
@@ -181,6 +215,16 @@ export default function SubscriptionWidget() {
       acc[s.currency] = (acc[s.currency] ?? 0) + s.price;
       return acc;
     }, {}) ?? {};
+
+  const scheduled: SubWithSchedule[] = (subs ?? [])
+    .map((s) => {
+      const next = nextBillingDate(s.billing_day);
+      return { ...s, next, dLeft: daysUntil(next) };
+    })
+    .sort((a, b) => a.dLeft - b.dLeft);
+
+  const preview = scheduled.slice(0, PREVIEW_COUNT);
+  const hiddenCount = scheduled.length - preview.length;
 
   return (
     <WidgetCard title="구독 관리">
@@ -285,42 +329,29 @@ export default function SubscriptionWidget() {
               {!error && subs.length === 0 && (
                 <p className="text-sm text-ink-faint">등록된 구독이 없습니다.</p>
               )}
+
+              {scheduled.length > 0 && (
+                <p className="mb-1 text-xs text-ink-faint">
+                  총 {scheduled.length}개 구독 · 다음 결제:{" "}
+                  <span className="font-medium text-ink-soft">{scheduled[0].name}</span> (
+                  {formatBillingLabel(scheduled[0].next, scheduled[0].dLeft)})
+                </p>
+              )}
+
               <ul className="divide-y divide-border text-sm">
-                {subs.map((s) => {
-                  const next = nextBillingDate(s.billing_day);
-                  const dLeft = daysUntil(next);
-                  const soon = dLeft <= 3;
-                  const icon = iconFor(s.name);
-                  return (
-                    <li key={s.id} className="group flex items-start justify-between gap-2 py-2">
-                      <span className="flex items-center gap-2">
-                        <IconBadge icon={icon} size={7} />
-                        <span>
-                          <span className="block text-ink">{s.name}</span>
-                          <span
-                            className={`block text-xs ${
-                              soon ? "font-semibold text-accent" : "text-ink-faint"
-                            }`}
-                          >
-                            {formatBillingLabel(next, dLeft)}
-                          </span>
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="font-mono text-xs tabular-nums text-ink-soft">
-                          {formatMoney(s.price, s.currency)}
-                        </span>
-                        <button
-                          onClick={() => handleDelete(s.id)}
-                          className="text-xs text-ink-faint opacity-0 group-hover:opacity-100 hover:text-red-500"
-                        >
-                          삭제
-                        </button>
-                      </span>
-                    </li>
-                  );
-                })}
+                {preview.map((s) => (
+                  <SubRow key={s.id} sub={s} onDelete={handleDelete} />
+                ))}
               </ul>
+
+              {hiddenCount > 0 && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="mt-1 text-xs font-medium text-accent hover:text-accent-ink"
+                >
+                  {hiddenCount}개 더보기
+                </button>
+              )}
 
               {Object.keys(totals).length > 0 && (
                 <p className="mt-2 text-xs text-ink-faint">
@@ -333,6 +364,34 @@ export default function SubscriptionWidget() {
             </>
           )}
         </>
+      )}
+
+      {showAll && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowAll(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[80vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-xl"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-ink">전체 구독 ({scheduled.length})</h3>
+              <button
+                onClick={() => setShowAll(false)}
+                className="text-ink-faint hover:text-ink"
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
+            <ul className="divide-y divide-border text-sm">
+              {scheduled.map((s) => (
+                <SubRow key={s.id} sub={s} onDelete={handleDelete} />
+              ))}
+            </ul>
+          </div>
+        </div>
       )}
     </WidgetCard>
   );
