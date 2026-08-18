@@ -19,11 +19,25 @@ const emptyForm = { name: "", price: "", currency: "KRW" as "KRW" | "USD", billi
 const fieldClass =
   "rounded-lg border border-border bg-bg px-2 py-1.5 text-sm text-ink outline-none focus:border-accent";
 
-type Preset = { name: string; price: number; currency: "KRW" | "USD"; color: string; badge: string };
+type Preset = {
+  name: string;
+  price: number;
+  currency: "KRW" | "USD";
+  color: string;
+  badge: string;
+  logoSlug?: string; // simpleicons.org 슬러그 — 있으면 실제 브랜드 로고 사용
+};
 
 const PRESETS: Preset[] = [
-  { name: "넷플릭스", price: 13500, currency: "KRW", color: "#E50914", badge: "N" },
-  { name: "유튜브 프리미엄", price: 14900, currency: "KRW", color: "#FF0000", badge: "▶" },
+  { name: "넷플릭스", price: 13500, currency: "KRW", color: "#E50914", badge: "N", logoSlug: "netflix" },
+  {
+    name: "유튜브 프리미엄",
+    price: 14900,
+    currency: "KRW",
+    color: "#FF0000",
+    badge: "Y",
+    logoSlug: "youtube",
+  },
   { name: "디즈니+", price: 9900, currency: "KRW", color: "#113CCF", badge: "D+" },
   { name: "쿠팡 와우", price: 7890, currency: "KRW", color: "#3689E6", badge: "C" },
   { name: "티빙", price: 9500, currency: "KRW", color: "#FF0031", badge: "T" },
@@ -31,15 +45,53 @@ const PRESETS: Preset[] = [
 
 const FALLBACK_COLORS = ["#6D5EF0", "#0EA5A5", "#E8873D", "#5B8DEF", "#C2418C", "#3FA05E"];
 
-function iconFor(name: string) {
+type Icon = { color: string; badge: string; logoUrl?: string };
+
+function iconFor(name: string): Icon {
   const preset = PRESETS.find((p) => p.name === name.trim());
-  if (preset) return { color: preset.color, badge: preset.badge };
+  if (preset) {
+    return {
+      color: preset.color,
+      badge: preset.badge,
+      logoUrl: preset.logoSlug ? `https://cdn.simpleicons.org/${preset.logoSlug}` : undefined,
+    };
+  }
 
   const trimmed = name.trim();
   const hash = Array.from(trimmed).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
   const color = FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
   const badge = trimmed.charAt(0).toUpperCase() || "?";
   return { color, badge };
+}
+
+function IconBadge({ icon, size = 6 }: { icon: Icon; size?: number }) {
+  const dimension = `${size * 0.25}rem`;
+  if (icon.logoUrl) {
+    return (
+      <span
+        style={{ width: dimension, height: dimension }}
+        className="flex shrink-0 items-center justify-center rounded-full bg-white p-1 ring-1 ring-border"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={icon.logoUrl} alt="" className="h-full w-full object-contain" />
+      </span>
+    );
+  }
+  return (
+    <span
+      style={{ backgroundColor: icon.color, width: dimension, height: dimension }}
+      className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+    >
+      {icon.badge}
+    </span>
+  );
+}
+
+function formatBillingLabel(date: Date, dLeft: number) {
+  const md = `${date.getMonth() + 1}월 ${date.getDate()}일`;
+  if (dLeft === 0) return `오늘 결제 (${md})`;
+  if (dLeft === 1) return `내일 결제 (${md})`;
+  return `${md} 결제 · D-${dLeft}`;
 }
 
 function nextBillingDate(billingDay: number) {
@@ -145,12 +197,7 @@ export default function SubscriptionWidget() {
                 }
                 className="flex items-center gap-1.5 rounded-full border border-border bg-bg px-2 py-1 text-xs text-ink-soft hover:border-accent hover:text-ink"
               >
-                <span
-                  style={{ backgroundColor: p.color }}
-                  className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                >
-                  {p.badge}
-                </span>
+                <IconBadge icon={iconFor(p.name)} size={4} />
                 {p.name}
               </button>
             ))}
@@ -213,26 +260,23 @@ export default function SubscriptionWidget() {
                   const soon = dLeft <= 3;
                   const icon = iconFor(s.name);
                   return (
-                    <li key={s.id} className="group flex items-center justify-between py-1.5">
-                      <span className="flex items-center gap-2 text-ink">
-                        <span
-                          style={{ backgroundColor: icon.color }}
-                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                        >
-                          {icon.badge}
+                    <li key={s.id} className="group flex items-start justify-between gap-2 py-2">
+                      <span className="flex items-center gap-2">
+                        <IconBadge icon={icon} size={7} />
+                        <span>
+                          <span className="block text-ink">{s.name}</span>
+                          <span
+                            className={`block text-xs ${
+                              soon ? "font-semibold text-accent" : "text-ink-faint"
+                            }`}
+                          >
+                            {formatBillingLabel(next, dLeft)}
+                          </span>
                         </span>
-                        {s.name}
                       </span>
                       <span className="flex items-center gap-2">
                         <span className="font-mono text-xs tabular-nums text-ink-soft">
                           {formatMoney(s.price, s.currency)}
-                        </span>
-                        <span
-                          className={`font-mono text-xs tabular-nums ${
-                            soon ? "font-semibold text-accent" : "text-ink-faint"
-                          }`}
-                        >
-                          D-{dLeft}
                         </span>
                         <button
                           onClick={() => handleDelete(s.id)}
