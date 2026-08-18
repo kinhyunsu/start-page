@@ -6,6 +6,7 @@ import NaverSearchWidget from "@/components/widgets/NaverSearchWidget";
 import PhotoWidget from "@/components/widgets/PhotoWidget";
 import CalendarWidget from "@/components/widgets/CalendarWidget";
 import RoutineWidget from "@/components/widgets/RoutineWidget";
+import BookmarkWidget from "@/components/widgets/BookmarkWidget";
 import SubscriptionWidget from "@/components/widgets/SubscriptionWidget";
 import ExpenseWidget from "@/components/widgets/ExpenseWidget";
 import MemoWidget from "@/components/widgets/MemoWidget";
@@ -26,8 +27,9 @@ export default function Home() {
       </header>
       <LoginBanner />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-6 sm:gap-6 sm:p-8 lg:flex-row lg:items-start">
-        <aside className="lg:w-64 lg:shrink-0">
+        <aside className="flex flex-col gap-5 lg:w-64 lg:shrink-0 lg:gap-6">
           <RoutineWidget />
+          <BookmarkWidget />
         </aside>
         <DashboardGrid>
           <NaverSearchWidget />
