@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://start-page-umber.vercel.app"),
   title: "시작페이지",
   description: "검색, 날씨, 캘린더, 포트폴리오, 루틴, 가계부까지 한 곳에서 — 나만의 시작페이지",
   openGraph: {
